@@ -1,5 +1,6 @@
 /obj
 /gen
+/build
 /jni/com_googlecode_tesseract_android/src/config/**
 /jni/com_googlecode_tesseract_android/src/m4/**
 /jni/com_googlecode_tesseract_android/src/vs2008/**
