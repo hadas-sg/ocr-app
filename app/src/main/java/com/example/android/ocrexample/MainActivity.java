@@ -1,12 +1,15 @@
 package com.example.android.ocrexample;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -19,7 +22,8 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.io.InputStream;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+    implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final int SELECT_PICTURE = 1;
 
@@ -31,7 +35,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        textProcessorTask = new ProcessTextWithOCR();
+
+        // Set settings listener
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+        setCurrLanguage(sharedPreferences);
+
+        textProcessorTask = null;
     }
 
     @Override
@@ -50,15 +60,24 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent settingsIntent = new Intent(this, SettingsActivity.class);
+            startActivity(settingsIntent);
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (getResources().getString(R.string.pref_lang_key).equals(key)) {
+            setCurrLanguage(sharedPreferences);
+        }
+    }
+
     public void openGallery(View view) {
 
-        if (textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
+        if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
             TextView resulTextView = (TextView) findViewById(R.id.resulTextView);
             resulTextView.setText("Still processing image... Please wait for process to finish before changing image");
         }
@@ -72,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void openCamera(View view) {
 
-        if (textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
+        if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
             TextView resulTextView = (TextView) findViewById(R.id.resulTextView);
             resulTextView.setText("Still processing image... Please wait for process to finish before changing image");
         }
@@ -92,13 +111,40 @@ public class MainActivity extends AppCompatActivity {
                 Uri selectedImageUri = data.getData();
                 ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
                 imageViewToUpdate.setImageURI(selectedImageUri);
-                textProcessorTask = new ProcessTextWithOCR();
+                textProcessorTask = new ProcessTextWithOCR(this);
                 textProcessorTask.execute(selectedImageUri);
             }
         }
     }
 
+    private void setCurrLanguage(SharedPreferences sharedPreferences) {
+        TextView currentLanguageTextView = (TextView)findViewById(R.id.textViewCurrLanguage);
+        String currLanguageString = getResources().getString(R.string.current_language_text);
+        String languageCode = sharedPreferences.getString(getResources().getString(R.string.pref_lang_key), "");
+
+        // Get the arrays used by the ListPreference
+        CharSequence[] languageCodesArray = getApplicationContext().getResources().getTextArray(R.array.language_code);
+        CharSequence[] languageValuesArray = getApplicationContext().getResources().getTextArray(R.array.language);
+
+        // Loop and find index to get the title of the language code
+        int len = languageCodesArray.length;
+        for (int i = 0; i < len; i++) {
+            if (languageCodesArray[i].equals(languageCode)) {
+                currLanguageString += (String) languageValuesArray[i];
+            }
+        }
+
+        currentLanguageTextView.setText(currLanguageString);
+    }
+
     private class ProcessTextWithOCR extends AsyncTask<Uri, Void, String> {
+
+        private Context context;
+        private String language;
+
+        public ProcessTextWithOCR(Context context) {
+            this.context = context;
+        }
 
         @Override
         protected String doInBackground(Uri... uris) {
@@ -113,8 +159,7 @@ public class MainActivity extends AppCompatActivity {
                     Bitmap bitmapFile = BitmapFactory.decodeStream(imageStream);
                     imageStream.close();
 
-                    String str = Environment.getExternalStorageDirectory().toString();
-                    ocrAPI.init(Environment.getExternalStorageDirectory().toString(), "eng");
+                    ocrAPI.init(Environment.getExternalStorageDirectory().toString(), language);
                     ocrAPI.setImage(bitmapFile);
                     textInImage = ocrAPI.getUTF8Text();
 
@@ -135,6 +180,10 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             TextView resulTextView = (TextView)findViewById(R.id.resulTextView);
             resulTextView.setText("Processing image to get text...");
+
+            // Get the language from the settings
+            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this.context);
+            language = sharedPrefs.getString(getResources().getString(R.string.pref_lang_key), "");
         }
 
         @Override

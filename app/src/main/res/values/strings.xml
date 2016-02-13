@@ -1,5 +1,14 @@
 <resources>
     <string name="app_name">OCR App</string>
     <string name="action_settings">Settings</string>
+
     <string name="title_activity_gallery">Gallery Activity</string>
+    <string name="title_activity_menu">MenuActivity</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <string name="pref_lang_key">pref_lang</string>
+    <string name="pref_lang_title">Language</string>
+    <string name="pref_lang_default">eng</string>
+
+    <string name="current_language_text">Current Language:\n</string>
 </resources>
