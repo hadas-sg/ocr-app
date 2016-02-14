@@ -51,12 +51,17 @@ public class MainActivity extends AppCompatActivity
     private Handler handler = new Handler();
     private String mCurrentPhotoPath;
 
+    DBHelper translationDB;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        // Create DB for translations
+        translationDB = new DBHelper(this);
 
         // Set settings listener
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -158,8 +163,8 @@ public class MainActivity extends AppCompatActivity
     public void openGallery(View view) {
 
         if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
-            TextView resulTextView = (TextView) findViewById(R.id.resulTextView);
-            resulTextView.setText("Still processing image... Please wait for process to finish before changing image");
+            TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
+            pictureTextViewTitle.setText("Still processing image... Please wait for process to finish before changing image");
         }
         else {
             Intent intent = new Intent();
@@ -172,8 +177,8 @@ public class MainActivity extends AppCompatActivity
     public void openCamera(View view) {
 
         if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
-            TextView resulTextView = (TextView) findViewById(R.id.resulTextView);
-            resulTextView.setText("Still processing image... Please wait for process to finish before changing image");
+            TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
+            pictureTextViewTitle.setText("Still processing image... Please wait for process to finish before changing image");
         }
         else {
             // TODO: Open Camera...
@@ -257,7 +262,7 @@ public class MainActivity extends AppCompatActivity
         currentLanguageTextView.setText(currLanguageString);
     }
 
-    private class ProcessTextWithOCR extends AsyncTask<Uri, Void, String> {
+    private class ProcessTextWithOCR extends AsyncTask<Uri, Void, String[]> {
 
         private Context context;
         private String language;
@@ -267,8 +272,9 @@ public class MainActivity extends AppCompatActivity
         }
 
         @Override
-        protected String doInBackground(Uri... uris) {
+        protected String[] doInBackground(Uri... uris) {
 
+            // Get text from image
             String textInImage = "";
 
             if (uris.length == 1) {
@@ -302,13 +308,24 @@ public class MainActivity extends AppCompatActivity
                 }
             }
 
-            return textInImage;
+            // Check for translation in the dictionary
+            String translation = "";
+
+            // Only english translation is supported
+            if (!language.equals("eng")) {
+                translation = "Translation of current language is not supported.";
+            }
+            else {
+                translation = translationDB.getHebrewTranslation(textInImage);
+            }
+
+            String[] resultsArray = {textInImage, translation};
+            return resultsArray;
         }
 
         @Override
         protected void onPreExecute() {
-            TextView resulTextView = (TextView)findViewById(R.id.resulTextView);
-            resulTextView.setText("Processing image to get text...");
+            updateTextViews("Processing image to get text...", "", "", "");
 
             // Get the language from the settings
             SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this.context);
@@ -317,9 +334,30 @@ public class MainActivity extends AppCompatActivity
         }
 
         @Override
-        protected void onPostExecute(String textInImage) {
-            TextView resulTextView = (TextView) findViewById(R.id.resulTextView);
-            resulTextView.setText(textInImage);
+        protected void onPostExecute(String[] resultsArray) {
+            updateTextViews(getResources().getString(R.string.picture_text),
+                    resultsArray[0],
+                    getResources().getString(R.string.translation_text),
+                    resultsArray[1]);
+        }
+
+        private void updateTextViews(String pictureTextTitle,
+                                     String textInImage,
+                                     String translationTextTitle,
+                                     String translation) {
+
+            TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
+            pictureTextViewTitle.setText(pictureTextTitle);
+
+            TextView pictureTextView = (TextView) findViewById(R.id.pictureTextView);
+            pictureTextView.setText(textInImage);
+
+            TextView translationTextViewTitle = (TextView) findViewById(R.id.translationTextViewTitle);
+            translationTextViewTitle.setText(translationTextTitle);
+
+            TextView translationTextView = (TextView) findViewById(R.id.translationTextView);
+            translationTextView.setText(translation);
+
         }
     }
 }

@@ -11,4 +11,6 @@
     <string name="pref_lang_default">eng</string>
 
     <string name="current_language_text">Current Language:\n</string>
+    <string name="picture_text">Text in Picture:</string>
+    <string name="translation_text">Translation:</string>
 </resources>

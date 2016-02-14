@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     tools:context="com.example.android.ocrexample.MainActivity"
-    android:padding="0dp">
+    android:padding="0dp"
+    android:layout_margin="0dp">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -27,8 +28,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/imageButtonGallery"
-        android:layout_marginTop="20dp"
-        android:layout_marginLeft="20dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginLeft="10dp"
         android:src="@mipmap/ic_gallery"
         android:cropToPadding="false"
         android:padding="5dp"
@@ -39,7 +40,7 @@
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/imageButtonCamera"
+        android:id="@+id/imawingeButtonCamera"
         android:src="@mipmap/ic_camera"
         android:padding="5dp"
         android:onClick="openCamera"
@@ -66,22 +67,34 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:id="@+id/mainImageView"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="5dp"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="5dp"
             android:layout_below="@+id/mainTextView"
             android:layout_centerHorizontal="true"
-            android:layout_weight=".5"
+            android:layout_weight=".4"
             android:src="@drawable/eye_logo" />
 
-        <ScrollView android:id="@+id/textAreaScroller"
+        <TextView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".5"
+            android:layout_height="wrap_content"
+            android:id="@+id/pictureTextViewTitle"
+            android:text="Welcome to OCR App,\nOpen Gallery or Camera to select an image"
+            android:layout_below="@+id/mainImageView"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"
-            android:layout_marginBottom="20dp"
+            android:textStyle="bold"
+            android:layout_centerHorizontal="true"
+            android:textAlignment="center" />
+
+        <ScrollView android:id="@+id/textInPictureScroller"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight=".3"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginBottom="5dp"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/mainImageView"
             android:scrollbars="vertical">
@@ -89,12 +102,46 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:id="@+id/resulTextView"
-                android:text="Welcome to OCR App,\nOpen Gallery or Camera to select an image"
-                android:layout_below="@+id/mainImageView"
+                android:id="@+id/pictureTextView"
+                android:text=""
+                android:layout_below="@+id/pictureTextViewTitle"
                 android:layout_centerHorizontal="true"
                 android:textAlignment="center" />
         </ScrollView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/translationTextViewTitle"
+            android:text=""
+            android:layout_below="@+id/pictureTextView"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:textStyle="bold"
+            android:layout_centerHorizontal="true"
+            android:textAlignment="center" />
+
+        <ScrollView android:id="@+id/textTranslationScroller"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight=".3"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginBottom="5dp"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/textInPictureScroller"
+            android:scrollbars="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/translationTextView"
+                android:text=""
+                android:layout_below="@+id/translationTextViewTitle"
+                android:layout_centerHorizontal="true"
+                android:textAlignment="center" />
+        </ScrollView>
+
         <ProgressBar
             android:id="@+id/progressBar1"
             style="?android:attr/progressBarStyleHorizontal"
