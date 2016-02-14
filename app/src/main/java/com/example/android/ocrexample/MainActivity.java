@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -29,7 +30,11 @@ import android.widget.TextView;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -44,6 +49,7 @@ public class MainActivity extends AppCompatActivity
     private int progressStatus = 0;
     private TextView textView;
     private Handler handler = new Handler();
+    private String mCurrentPhotoPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,11 +177,18 @@ public class MainActivity extends AppCompatActivity
         }
         else {
             // TODO: Open Camera...
-
-            TextView textViewToUpdate = (TextView) findViewById(R.id.resulTextView);
-            textViewToUpdate.setText("Not Implemented!");
-            ImageView imageViewToUpdate = (ImageView) findViewById(R.id.mainImageView);
-            imageViewToUpdate.setImageResource(android.R.color.transparent);
+            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                // Error occurred while creating the File
+            }
+            // Continue only if the File was successfully created
+            if (photoFile != null) {
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
+                startActivityForResult(takePictureIntent, TAKE_PICTURE);
+            }
         }
     }
 
@@ -188,7 +201,39 @@ public class MainActivity extends AppCompatActivity
                 textProcessorTask = new ProcessTextWithOCR(this);
                 textProcessorTask.execute(selectedImageUri);
             }
+            else if (requestCode == TAKE_PICTURE)
+            {
+                File f = new File(mCurrentPhotoPath);
+                Uri contentUri = Uri.parse(f.toString());
+                ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
+                imageViewToUpdate.setImageURI(contentUri);
+
+                Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                mediaScanIntent.setData(contentUri);
+                this.sendBroadcast(mediaScanIntent);
+
+                textProcessorTask = new ProcessTextWithOCR(this);
+                textProcessorTask.execute(contentUri);
+
+            }
         }
+    }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "IMG_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DCIM);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = "file:" + image.getAbsolutePath();
+        return image;
     }
 
     private void setCurrLanguage(SharedPreferences sharedPreferences) {
