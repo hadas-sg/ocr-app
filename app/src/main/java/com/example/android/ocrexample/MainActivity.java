@@ -1,15 +1,22 @@
 package com.example.android.ocrexample;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -26,6 +33,7 @@ public class MainActivity extends AppCompatActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final int SELECT_PICTURE = 1;
+    private static final int REQUEST_READ_EXTERNAL_STORAGE = 1;
 
     ProcessTextWithOCR textProcessorTask;
 
@@ -42,6 +50,60 @@ public class MainActivity extends AppCompatActivity
         setCurrLanguage(sharedPreferences);
 
         textProcessorTask = null;
+
+        // Check permissions to sdcard in android 6
+        checkIfStoragePermissionGranted();
+    }
+
+    public void checkIfStoragePermissionGranted() {
+
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        REQUEST_READ_EXTERNAL_STORAGE);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+
+        switch (requestCode) {
+            case REQUEST_READ_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // Restart the process to add the permissions (Known Bug of android 6)
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                }
+                else
+                {
+                    // permission denied, exit the application
+                    AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(this);
+                    dlgAlert.setMessage("This application can't run without permissions to the external storage.\n" +
+                            "If you marked \"Never ask again\" at the permissions dialog you should reinstall the " +
+                            "application to grant permissions.\n" +
+                            "Press OK to exit the application.");
+                    dlgAlert.setTitle("Permission Denied");
+                    dlgAlert.setPositiveButton("Ok",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //dismiss the dialog
+                                    dialog.cancel();
+                                    MainActivity.this.finish();
+                                    System.exit(0);
+                                }
+                            });
+                    dlgAlert.setCancelable(false);
+                    dlgAlert.create().show();
+                }
+                return;
+            }
+        }
+
     }
 
     @Override
@@ -120,7 +182,8 @@ public class MainActivity extends AppCompatActivity
     private void setCurrLanguage(SharedPreferences sharedPreferences) {
         TextView currentLanguageTextView = (TextView)findViewById(R.id.textViewCurrLanguage);
         String currLanguageString = getResources().getString(R.string.current_language_text);
-        String languageCode = sharedPreferences.getString(getResources().getString(R.string.pref_lang_key), "");
+        String languageCode = sharedPreferences.getString(getResources().getString(R.string.pref_lang_key),
+                getResources().getString(R.string.pref_lang_default));
 
         // Get the arrays used by the ListPreference
         CharSequence[] languageCodesArray = getApplicationContext().getResources().getTextArray(R.array.language_code);
@@ -159,7 +222,7 @@ public class MainActivity extends AppCompatActivity
                     Bitmap bitmapFile = BitmapFactory.decodeStream(imageStream);
                     imageStream.close();
 
-                    ocrAPI.init(Environment.getExternalStorageDirectory().toString(), language);
+                    ocrAPI.init(Environment.getExternalStorageDirectory().getAbsolutePath(), language);
                     ocrAPI.setImage(bitmapFile);
                     textInImage = ocrAPI.getUTF8Text();
 
@@ -183,7 +246,8 @@ public class MainActivity extends AppCompatActivity
 
             // Get the language from the settings
             SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this.context);
-            language = sharedPrefs.getString(getResources().getString(R.string.pref_lang_key), "");
+            language = sharedPrefs.getString(getResources().getString(R.string.pref_lang_key),
+                    getResources().getString(R.string.pref_lang_default));
         }
 
         @Override
