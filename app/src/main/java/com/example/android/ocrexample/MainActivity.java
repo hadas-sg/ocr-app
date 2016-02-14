@@ -13,6 +13,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -23,6 +24,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
@@ -33,9 +35,15 @@ public class MainActivity extends AppCompatActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final int SELECT_PICTURE = 1;
-    private static final int REQUEST_READ_EXTERNAL_STORAGE = 1;
+    private static final int TAKE_PICTURE = 2;
+    private static final int REQUEST_PERMISSIONS = 1;
 
     ProcessTextWithOCR textProcessorTask;
+
+    private ProgressBar progressBar;
+    private int progressStatus = 0;
+    private TextView textView;
+    private Handler handler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +66,13 @@ public class MainActivity extends AppCompatActivity
     public void checkIfStoragePermissionGranted() {
 
         if (Build.VERSION.SDK_INT >= 23) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
+                    {
                 ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        REQUEST_READ_EXTERNAL_STORAGE);
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA},
+                        REQUEST_PERMISSIONS);
             }
         }
     }
@@ -71,10 +81,12 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
         switch (requestCode) {
-            case REQUEST_READ_EXTERNAL_STORAGE: {
+            case REQUEST_PERMISSIONS: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[1] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[2] == PackageManager.PERMISSION_GRANTED) {
 
                     // Restart the process to add the permissions (Known Bug of android 6)
                     android.os.Process.killProcess(android.os.Process.myPid());
@@ -215,7 +227,16 @@ public class MainActivity extends AppCompatActivity
             String textInImage = "";
 
             if (uris.length == 1) {
-                TessBaseAPI ocrAPI = new TessBaseAPI();
+
+                TessBaseAPI ocrAPI = new TessBaseAPI(new TessBaseAPI.ProgressNotifier() {
+                    @Override
+                    public void onProgressValues(TessBaseAPI.ProgressValues progressValues) {
+                        progressBar = (ProgressBar) findViewById(R.id.progressBar1);
+                        progressBar.setProgress(progressValues.getPercent());
+                        textView = (TextView) findViewById(R.id.textView1);
+                        textView.setText(progressValues.getPercent() + "/" + progressBar.getMax());
+                    }
+                });
 
                 try {
                     InputStream imageStream = getContentResolver().openInputStream(uris[0]);

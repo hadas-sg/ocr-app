@@ -95,7 +95,30 @@
                 android:layout_centerHorizontal="true"
                 android:textAlignment="center" />
         </ScrollView>
-    </LinearLayout>
+        <ProgressBar
+            android:id="@+id/progressBar1"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:indeterminate="false"
+            android:max="100"
+            android:minHeight="50dp"
+            android:minWidth="200dp"
+            android:progress="1"
+            android:layout_gravity="center" />
 
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/progressBar1"
+            android:layout_below="@+id/progressBar1"
+            android:text="0/100"
+            android:layout_gravity="center_horizontal"
+            android:allowUndo="false"
+            android:textColor="@android:color/black" />
+    </LinearLayout>
 </RelativeLayout>
 
