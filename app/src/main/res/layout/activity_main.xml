@@ -61,7 +61,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:layout_below="@+id/imageButtonGallery">
+        android:layout_below="@+id/imageButtonGallery"
+        android:id="@+id/linearLayout">
 
         <ImageView
             android:layout_width="match_parent"
@@ -167,5 +168,6 @@
             android:allowUndo="false"
             android:textColor="@android:color/black" />
     </LinearLayout>
+
 </RelativeLayout>
 

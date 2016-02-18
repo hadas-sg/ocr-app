@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -43,13 +44,15 @@ public class MainActivity extends AppCompatActivity
     private static final int TAKE_PICTURE = 2;
     private static final int REQUEST_PERMISSIONS = 1;
 
+    private static boolean mIsPictureSelected = false;
+    private static Uri mSelectedImageUri = null;
+
     ProcessTextWithOCR textProcessorTask;
     DBHelper translationDB;
 
     private ProgressBar progressBar;
     private int progressStatus = 0;
     private TextView textView;
-    private Handler handler = new Handler();
     private String mCurrentPhotoPath;
 
     @Override
@@ -59,8 +62,12 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+
+
         // Create DB for translations
         translationDB = new DBHelper(this);
+//        SQLiteDatabase db = translationDB.getWritableDatabase();
+//        translationDB.onUpgrade(db, 0, 1);
 
         // Set settings listener
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -170,6 +177,15 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    public void refresh(View view)
+    {
+        ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
+        if (mIsPictureSelected = true) {
+            textProcessorTask = new ProcessTextWithOCR(this);
+            textProcessorTask.execute(mSelectedImageUri);
+        }
+    }
+
     public void openCamera(View view) {
 
         if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
@@ -196,25 +212,27 @@ public class MainActivity extends AppCompatActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             if (requestCode == SELECT_PICTURE) {
-                Uri selectedImageUri = data.getData();
+                mSelectedImageUri = data.getData();
                 ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
-                imageViewToUpdate.setImageURI(selectedImageUri);
+                imageViewToUpdate.setImageURI(mSelectedImageUri);
+                mIsPictureSelected = true;
                 textProcessorTask = new ProcessTextWithOCR(this);
-                textProcessorTask.execute(selectedImageUri);
+                textProcessorTask.execute(mSelectedImageUri);
             }
             else if (requestCode == TAKE_PICTURE)
             {
                 File f = new File(mCurrentPhotoPath);
-                Uri contentUri = Uri.parse(f.toString());
+                mSelectedImageUri = Uri.parse(f.toString());
                 ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
-                imageViewToUpdate.setImageURI(contentUri);
+                imageViewToUpdate.setImageURI(mSelectedImageUri);
+                mIsPictureSelected = true;
 
                 Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                mediaScanIntent.setData(contentUri);
+                mediaScanIntent.setData(mSelectedImageUri);
                 this.sendBroadcast(mediaScanIntent);
 
                 textProcessorTask = new ProcessTextWithOCR(this);
-                textProcessorTask.execute(contentUri);
+                textProcessorTask.execute(mSelectedImageUri);
 
             }
         }
@@ -312,6 +330,7 @@ public class MainActivity extends AppCompatActivity
                 translation = getResources().getString(R.string.message_translation_not_supported);
             }
             else {
+                //translationDB.initDB(translationDB.getWritableDatabase());
                 translation = translationDB.getHebrewTranslation(textInImage);
             }
 

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">אפליקציית OCR</string>
 
     <string name="title_activity_gallery">גלריה</string>
     <string name="title_activity_settings">הגדרות</string>
@@ -21,4 +20,6 @@
     <string name="english_value">אנגלית</string>
     <string name="hebrew__value">עברית</string>
     <string name="message_translation_not_found">לא נמצא תרגום מתאים.</string>
+    <string name="Refresh">רענן</string>
+    <string name="app_name">תרגומון מבצעי</string>
 </resources>

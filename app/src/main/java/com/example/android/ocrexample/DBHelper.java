@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.StringTokenizer;
 
 /**
  * Created by hadas.sayag on 14/02/2016.
@@ -83,20 +84,37 @@ public class DBHelper extends SQLiteOpenHelper {
     public String getHebrewTranslation(String arabicWord){
         SQLiteDatabase db = this.getReadableDatabase();
         String hebrewWord = "";
+        String dlim = " .!@#$%^&*()_+-=?/~";
 
         try {
-            Cursor resultCursor = db.rawQuery("SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " +
-                    DICTIONARY_COLUMN_ARABIC_WORD + " = \"" + arabicWord + "\"", null);
+            //split text to lines
+            String[] lines = arabicWord.split("\n\n");
+            for (int i = 0; i < lines.length; i++)
+            {
+                //go over each word
+                StringTokenizer st = new StringTokenizer(lines[i], dlim, true);
+                while (st.hasMoreTokens()){
+                    String word = st.nextToken();
+                    if (!dlim.contains(word)) // actual word and not one of the delimiters
+                    {
+                        Cursor resultCursor = db.rawQuery("SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " +
+                                DICTIONARY_COLUMN_ARABIC_WORD + " = \"" + word + "\"", null);
+                        if (resultCursor != null) {
+                            // move cursor to first row - Return first translation found
+                            if (resultCursor.moveToFirst()) {
+                                // Get String from Cursor
+                                word = resultCursor.getString(resultCursor.getColumnIndex(DICTIONARY_COLUMN_HEBREW_WORD));
+                            }
+                        }
 
+                    }
+                    hebrewWord += word;
+                }
+                if (i > 0)
+                    hebrewWord += "\n\n";
+            }
 
             // if Cursor is contains results
-            if (resultCursor != null) {
-                // move cursor to first row - Return first translation found
-                if (resultCursor.moveToFirst()) {
-                    // Get String from Cursor
-                    hebrewWord = resultCursor.getString(resultCursor.getColumnIndex(DICTIONARY_COLUMN_HEBREW_WORD));
-                }
-            }
         }
         catch (Exception e) {
             System.err.println(e.getMessage());
