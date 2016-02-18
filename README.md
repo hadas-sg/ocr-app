@@ -1,8 +1,6 @@
 # ocr-app
 
-Before running the project download tesseract traindata and save it to tessdata directory on the sdcard:
-https://github.com/tesseract-ocr/tessdata/blob/master/eng.traineddata  
-https://github.com/tesseract-ocr/tessdata/blob/master/ara.traineddata  
-https://github.com/tesseract-ocr/tessdata/blob/master/heb.traineddata  
+Before running the project copy the "tessdata" folder from the "SdCard" folder in this repository to the sdcard in the emulator or the device.  
+The "tessdata" folder contains the tesseract traindata files (for english, hebrew and arabic languages), and the dictionary file.  
 
-Also install Android NDK.
+Also download and install Android NDK.
