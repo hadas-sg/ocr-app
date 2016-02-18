@@ -44,14 +44,13 @@ public class MainActivity extends AppCompatActivity
     private static final int REQUEST_PERMISSIONS = 1;
 
     ProcessTextWithOCR textProcessorTask;
+    DBHelper translationDB;
 
     private ProgressBar progressBar;
     private int progressStatus = 0;
     private TextView textView;
     private Handler handler = new Handler();
     private String mCurrentPhotoPath;
-
-    DBHelper translationDB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,11 +105,8 @@ public class MainActivity extends AppCompatActivity
                 {
                     // permission denied, exit the application
                     AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(this);
-                    dlgAlert.setMessage("This application can't run without permissions to the external storage.\n" +
-                            "If you marked \"Never ask again\" at the permissions dialog you should reinstall the " +
-                            "application to grant permissions.\n" +
-                            "Press OK to exit the application.");
-                    dlgAlert.setTitle("Permission Denied");
+                    dlgAlert.setMessage(getResources().getString(R.string.message_permissions_denied));
+                    dlgAlert.setTitle(getResources().getString(R.string.permissions_denied_title));
                     dlgAlert.setPositiveButton("Ok",
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {
@@ -164,7 +160,7 @@ public class MainActivity extends AppCompatActivity
 
         if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
             TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
-            pictureTextViewTitle.setText("Still processing image... Please wait for process to finish before changing image");
+            pictureTextViewTitle.setText(getResources().getString(R.string.message_still_process_image));
         }
         else {
             Intent intent = new Intent();
@@ -178,10 +174,10 @@ public class MainActivity extends AppCompatActivity
 
         if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
             TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
-            pictureTextViewTitle.setText("Still processing image... Please wait for process to finish before changing image");
+            pictureTextViewTitle.setText(getResources().getString(R.string.message_still_process_image));
         }
         else {
-            // TODO: Open Camera...
+            // Open Camera
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             File photoFile = null;
             try {
@@ -243,7 +239,7 @@ public class MainActivity extends AppCompatActivity
 
     private void setCurrLanguage(SharedPreferences sharedPreferences) {
         TextView currentLanguageTextView = (TextView)findViewById(R.id.textViewCurrLanguage);
-        String currLanguageString = getResources().getString(R.string.current_language_text);
+        String currLanguageString = getResources().getString(R.string.text_view_current_language);
         String languageCode = sharedPreferences.getString(getResources().getString(R.string.pref_lang_key),
                 getResources().getString(R.string.pref_lang_default));
 
@@ -294,7 +290,7 @@ public class MainActivity extends AppCompatActivity
                     Bitmap bitmapFile = BitmapFactory.decodeStream(imageStream);
                     imageStream.close();
 
-                    ocrAPI.init(Environment.getExternalStorageDirectory().getAbsolutePath(), language);
+                    ocrAPI.init(Environment.getExternalStorageDirectory().toString(), language);
                     ocrAPI.setImage(bitmapFile);
                     textInImage = ocrAPI.getUTF8Text();
 
@@ -309,14 +305,19 @@ public class MainActivity extends AppCompatActivity
             }
 
             // Check for translation in the dictionary
-            String translation = "";
+            String translation;
 
             // Only english translation is supported
-            if (!language.equals("eng")) {
-                translation = "Translation of current language is not supported.";
+            if (!language.equals("ara")) {
+                translation = getResources().getString(R.string.message_translation_not_supported);
             }
             else {
                 translation = translationDB.getHebrewTranslation(textInImage);
+            }
+
+            // Check if translation was found
+            if (translation.equals("")) {
+                translation = getResources().getString(R.string.message_translation_not_found);
             }
 
             String[] resultsArray = {textInImage, translation};
@@ -325,7 +326,7 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected void onPreExecute() {
-            updateTextViews("Processing image to get text...", "", "", "");
+            updateTextViews(getResources().getString(R.string.message_process_image), "", "", "");
 
             // Get the language from the settings
             SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this.context);
@@ -335,9 +336,9 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected void onPostExecute(String[] resultsArray) {
-            updateTextViews(getResources().getString(R.string.picture_text),
+            updateTextViews(getResources().getString(R.string.text_view_picture_text_title),
                     resultsArray[0],
-                    getResources().getString(R.string.translation_text),
+                    getResources().getString(R.string.text_view_translation_title),
                     resultsArray[1]);
         }
 
@@ -357,7 +358,6 @@ public class MainActivity extends AppCompatActivity
 
             TextView translationTextView = (TextView) findViewById(R.id.translationTextView);
             translationTextView.setText(translation);
-
         }
     }
 }

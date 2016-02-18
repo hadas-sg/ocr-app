@@ -5,7 +5,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.HashMap;
 
 /**
@@ -47,15 +51,38 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     private void initDB(SQLiteDatabase db) {
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(DICTIONARY_COLUMN_HEBREW_WORD, "shalom");
-        contentValues.put(DICTIONARY_COLUMN_ARABIC_WORD, "salam");
-        db.insert(DICTIONARY_TABLE_NAME, null, contentValues);
+
+        // Open dictionary file
+        File dictionaryFile = new File(Environment.getExternalStorageDirectory().toString() + "/tessdata/dictionaryFile.txt");
+        try {
+            BufferedReader dictionaryReader = new BufferedReader(new FileReader(dictionaryFile));
+            String line = dictionaryReader.readLine();
+
+            while (line != null) {
+
+                // Save current line to the db
+                String[] words = line.split(" ");
+
+                if (words.length == 2) {
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put(DICTIONARY_COLUMN_HEBREW_WORD, words[1]);
+                    contentValues.put(DICTIONARY_COLUMN_ARABIC_WORD, words[0]);
+                    db.insert(DICTIONARY_TABLE_NAME, null, contentValues);
+                }
+
+                line = dictionaryReader.readLine();
+            }
+
+            dictionaryReader.close();
+        }
+        catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
     }
 
     public String getHebrewTranslation(String arabicWord){
         SQLiteDatabase db = this.getReadableDatabase();
-        String hebrewWord = "No translation found";
+        String hebrewWord = "";
 
         try {
             Cursor resultCursor = db.rawQuery("SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " +
@@ -76,30 +103,5 @@ public class DBHelper extends SQLiteOpenHelper {
         }
 
         return hebrewWord;
-    }
-
-    public String getArabicTranslation(String hebrewWord){
-        SQLiteDatabase db = this.getReadableDatabase();
-        String arabicWord = "No translation found";
-
-        try {
-            Cursor resultCursor = db.rawQuery("SELECT * FROM " + DICTIONARY_TABLE_NAME + " WHERE " +
-                    DICTIONARY_COLUMN_HEBREW_WORD + " = \"" + hebrewWord + "\"", null);
-
-
-            // if Cursor is contains results
-            if (resultCursor != null) {
-                // move cursor to first row - Return first translation found
-                if (resultCursor.moveToFirst()) {
-                    // Get String from Cursor
-                    arabicWord = resultCursor.getString(resultCursor.getColumnIndex(DICTIONARY_COLUMN_ARABIC_WORD));
-                }
-            }
-        }
-        catch (Exception e) {
-            System.err.println(e.getMessage());
-        }
-
-        return arabicWord;
     }
 }

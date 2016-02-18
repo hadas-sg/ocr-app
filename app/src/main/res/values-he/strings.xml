@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">אפליקציית OCR</string>
+
+    <string name="title_activity_gallery">גלריה</string>
+    <string name="title_activity_settings">הגדרות</string>
+
+    <string name="pref_lang_title">שפה</string>
+
+    <string name="text_view_current_language">שפה:\n</string>
+    <string name="text_view_picture_text_title">הטקסט שזוהה בתמונה:</string>
+    <string name="text_view_translation_title">תרגום:</string>
+    <string name="action_settings">הגדרות</string>
+    <string name="message_opening">ברוך הבא לאפליקציית OCR,\nאנא בחר תמונה מהגלריה או צלם תמונה לתרגום.</string>
+    <string name="message_permissions_denied">האפליקציה לא יכולה לרוץ ללא הרשאות לאחסון חיצוני.\n במידה וסימנת את האופציה "\אל תציג שוב\" יש להתקין את האפליקציה מחדש כדי לאשר גישה לאחסון.\n לחץ OK כדי לסגור את האפליקציה.</string>
+    <string name="message_process_image">מבצע עיבוד לתמונה לצורך זיהוי הטקסט...</string>
+    <string name="message_still_process_image">עדיין מבצע עיבוד לתמונה לצורך זיהוי הטקסט... אנא המתן שהתהליך יסתיים לפני טעינת תמונה חדשה.</string>
+    <string name="permissions_denied_title">הרשאה נדחתה</string>
+    <string name="arabic_value">ערבית</string>
+    <string name="english_value">אנגלית</string>
+    <string name="hebrew__value">עברית</string>
+    <string name="message_translation_not_supported">גרסה זו תומכת בתרגום מילים בשפה הערבית בלבד.</string>
+    <string name="message_translation_not_found">לא נמצא תרגום מתאים.</string>
+</resources>

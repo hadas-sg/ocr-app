@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="language">
-        <item>English</item>
-        <item>Hebrew</item>
-        <item>Arabic</item>
+        <item>@string/english_value</item>
+        <item>@string/hebrew__value</item>
+        <item>@string/arabic_value</item>
     </string-array>
 
     <string-array name="language_code">
