@@ -60,14 +60,14 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:layout_below="@+id/imageButtonGallery"
         android:layout_above="@+id/progressBar1"
         android:id="@+id/linearLayout">
 
         <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:id="@+id/mainImageView"
             android:layout_marginTop="5dp"
             android:layout_marginLeft="20dp"
@@ -78,8 +78,8 @@
             android:src="@drawable/eye_vision" />
 
         <ScrollView android:id="@+id/textInPictureScroller"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_weight=".6"
             android:layout_marginLeft="20dp"
             android:layout_marginRight="20dp"

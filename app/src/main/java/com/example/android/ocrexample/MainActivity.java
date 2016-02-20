@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -14,7 +13,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
@@ -44,11 +42,25 @@ public class MainActivity extends AppCompatActivity
     private static final int TAKE_PICTURE = 2;
     private static final int REQUEST_PERMISSIONS = 1;
 
+    private static final String PICTURE_TEXT_VIEW_TITLE_CODE = "1";
+    private static final String PICTURE_TEXT_VIEW_CODE = "2";
+    private static final String TRANSLATION_TEXT_VIEW_TITLE_CODE = "3";
+    private static final String TRANSLATION_TEXT_VIEW_CODE = "4";
+    private static final String CURRENT_LANGUAGE_TEXT_VIEW_CODE = "5";
+    private static final String IMAGE_VIEW_URI_CODE = "6";
+
+    private TextView mPictureTextViewTitle;
+    private TextView mPictureTextView;
+    private TextView mTranslationTextViewTitle;
+    private TextView mTranslationTextView;
+    private TextView mCurrentLanguageTextView;
+    private ImageView mImageViewProcessedImage;
+
     private static boolean mIsPictureSelected = false;
     private static Uri mSelectedImageUri = null;
 
-    ProcessTextWithOCR textProcessorTask;
-    DBHelper translationDB;
+    private ProcessTextWithOCR mTextProcessorTask;
+    private DBHelper mTranslationDB;
 
     private ProgressBar progressBar;
     private int progressStatus = 0;
@@ -62,22 +74,59 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
-
         // Create DB for translations
-        translationDB = new DBHelper(this);
+        mTranslationDB = new DBHelper(this);
 //        SQLiteDatabase db = translationDB.getWritableDatabase();
 //        translationDB.onUpgrade(db, 0, 1);
+
+        mTextProcessorTask = null;
+
+        mPictureTextViewTitle = (TextView)findViewById(R.id.pictureTextViewTitle);
+        mPictureTextView = (TextView)findViewById(R.id.pictureTextView);
+        mTranslationTextViewTitle = (TextView)findViewById(R.id.translationTextViewTitle);
+        mTranslationTextView = (TextView)findViewById(R.id.translationTextView);
+        mCurrentLanguageTextView = (TextView)findViewById(R.id.textViewCurrLanguage);
+        mImageViewProcessedImage = (ImageView)findViewById(R.id.mainImageView);
 
         // Set settings listener
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
         setCurrLanguage(sharedPreferences);
 
-        textProcessorTask = null;
-
         // Check permissions to sdcard in android 6
         checkIfStoragePermissionGranted();
+
+        // Restore activity's state
+        if (savedInstanceState != null) {
+            mPictureTextViewTitle.setText(savedInstanceState.getString(PICTURE_TEXT_VIEW_TITLE_CODE));
+            mPictureTextView.setText(savedInstanceState.getString(PICTURE_TEXT_VIEW_CODE));
+            mTranslationTextViewTitle.setText(savedInstanceState.getString(TRANSLATION_TEXT_VIEW_TITLE_CODE));
+            mTranslationTextView.setText(savedInstanceState.getString(TRANSLATION_TEXT_VIEW_CODE));
+            mCurrentLanguageTextView.setText(savedInstanceState.getString(CURRENT_LANGUAGE_TEXT_VIEW_CODE));
+
+            // Check if there is a picture selected
+            String imageUriString = savedInstanceState.getString(IMAGE_VIEW_URI_CODE);
+            if (imageUriString != null) {
+                mImageViewProcessedImage.setImageURI(Uri.parse(imageUriString));
+            }
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle savedInstanceState) {
+
+        super.onSaveInstanceState(savedInstanceState);
+
+        savedInstanceState.putString(PICTURE_TEXT_VIEW_TITLE_CODE, mPictureTextViewTitle.getText().toString());
+        savedInstanceState.putString(PICTURE_TEXT_VIEW_CODE, mPictureTextView.getText().toString());
+        savedInstanceState.putString(TRANSLATION_TEXT_VIEW_TITLE_CODE, mTranslationTextViewTitle.getText().toString());
+        savedInstanceState.putString(TRANSLATION_TEXT_VIEW_CODE, mTranslationTextView.getText().toString());
+        savedInstanceState.putString(CURRENT_LANGUAGE_TEXT_VIEW_CODE, mCurrentLanguageTextView.getText().toString());
+
+        // Check if there is a picture selected
+        if (mSelectedImageUri != null) {
+            savedInstanceState.putString(IMAGE_VIEW_URI_CODE, mSelectedImageUri.toString());
+        }
     }
 
     public void checkIfStoragePermissionGranted() {
@@ -165,9 +214,8 @@ public class MainActivity extends AppCompatActivity
 
     public void openGallery(View view) {
 
-        if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
-            TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
-            pictureTextViewTitle.setText(getResources().getString(R.string.message_still_process_image));
+        if (mTextProcessorTask != null && mTextProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
+            mPictureTextViewTitle.setText(getResources().getString(R.string.message_still_process_image));
         }
         else {
             Intent intent = new Intent();
@@ -177,20 +225,10 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void refresh(View view)
-    {
-        ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
-        if (mIsPictureSelected = true) {
-            textProcessorTask = new ProcessTextWithOCR(this);
-            textProcessorTask.execute(mSelectedImageUri);
-        }
-    }
-
     public void openCamera(View view) {
 
-        if (textProcessorTask != null && textProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
-            TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
-            pictureTextViewTitle.setText(getResources().getString(R.string.message_still_process_image));
+        if (mTextProcessorTask != null && mTextProcessorTask.getStatus() == AsyncTask.Status.RUNNING) {
+            mPictureTextViewTitle.setText(getResources().getString(R.string.message_still_process_image));
         }
         else {
             // Open Camera
@@ -213,26 +251,24 @@ public class MainActivity extends AppCompatActivity
         if (resultCode == RESULT_OK) {
             if (requestCode == SELECT_PICTURE) {
                 mSelectedImageUri = data.getData();
-                ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
-                imageViewToUpdate.setImageURI(mSelectedImageUri);
+                mImageViewProcessedImage.setImageURI(mSelectedImageUri);
                 mIsPictureSelected = true;
-                textProcessorTask = new ProcessTextWithOCR(this);
-                textProcessorTask.execute(mSelectedImageUri);
+                mTextProcessorTask = new ProcessTextWithOCR(this);
+                mTextProcessorTask.execute(mSelectedImageUri);
             }
             else if (requestCode == TAKE_PICTURE)
             {
                 File f = new File(mCurrentPhotoPath);
                 mSelectedImageUri = Uri.parse(f.toString());
-                ImageView imageViewToUpdate = (ImageView)findViewById(R.id.mainImageView);
-                imageViewToUpdate.setImageURI(mSelectedImageUri);
+                mImageViewProcessedImage.setImageURI(mSelectedImageUri);
                 mIsPictureSelected = true;
 
                 Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                 mediaScanIntent.setData(mSelectedImageUri);
                 this.sendBroadcast(mediaScanIntent);
 
-                textProcessorTask = new ProcessTextWithOCR(this);
-                textProcessorTask.execute(mSelectedImageUri);
+                mTextProcessorTask = new ProcessTextWithOCR(this);
+                mTextProcessorTask.execute(mSelectedImageUri);
 
             }
         }
@@ -256,7 +292,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setCurrLanguage(SharedPreferences sharedPreferences) {
-        TextView currentLanguageTextView = (TextView)findViewById(R.id.textViewCurrLanguage);
         String currLanguageString = getResources().getString(R.string.text_view_current_language);
         String languageCode = sharedPreferences.getString(getResources().getString(R.string.pref_lang_key),
                 getResources().getString(R.string.pref_lang_default));
@@ -273,7 +308,7 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
-        currentLanguageTextView.setText(currLanguageString);
+        mCurrentLanguageTextView.setText(currLanguageString);
     }
 
     private class ProcessTextWithOCR extends AsyncTask<Uri, Void, String[]> {
@@ -331,7 +366,7 @@ public class MainActivity extends AppCompatActivity
             }
             else {
                 //translationDB.initDB(translationDB.getWritableDatabase());
-                translation = translationDB.getHebrewTranslation(textInImage);
+                translation = mTranslationDB.getHebrewTranslation(textInImage);
             }
 
             // Check if translation was found
@@ -366,17 +401,10 @@ public class MainActivity extends AppCompatActivity
                                      String translationTextTitle,
                                      String translation) {
 
-            TextView pictureTextViewTitle = (TextView) findViewById(R.id.pictureTextViewTitle);
-            pictureTextViewTitle.setText(pictureTextTitle);
-
-            TextView pictureTextView = (TextView) findViewById(R.id.pictureTextView);
-            pictureTextView.setText(textInImage);
-
-            TextView translationTextViewTitle = (TextView) findViewById(R.id.translationTextViewTitle);
-            translationTextViewTitle.setText(translationTextTitle);
-
-            TextView translationTextView = (TextView) findViewById(R.id.translationTextView);
-            translationTextView.setText(translation);
+            mPictureTextViewTitle.setText(pictureTextTitle);
+            mPictureTextView.setText(textInImage);
+            mTranslationTextViewTitle.setText(translationTextTitle);
+            mTranslationTextView.setText(translation);
         }
     }
 }

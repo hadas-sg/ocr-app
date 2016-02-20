@@ -107,18 +107,20 @@ public class DBHelper extends SQLiteOpenHelper {
                             }
                         }
 
+                        resultCursor.close();
+
                     }
                     hebrewWord += word;
                 }
                 if (i > 0)
                     hebrewWord += "\n\n";
             }
-
-            // if Cursor is contains results
         }
         catch (Exception e) {
             System.err.println(e.getMessage());
         }
+
+        db.close();
 
         return hebrewWord;
     }
